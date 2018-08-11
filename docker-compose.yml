@@ -1,0 +1,51 @@
+version: '3'
+
+services:    
+  mongo:
+    image: mongo:3.6.6-jessie
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - lvol:/data/db
+      - /etc/localtime:/etc/localtime:ro
+    command: mongod --smallfiles --logpath=/dev/null # --quiet
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+    restart: always
+    networks:
+      locationnetwork:
+  locationserver:
+    image: stoyanmkd/locationserver:1.0.0
+    container_name: locationserver
+    ports:
+      - "3000:3000"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    depends_on:
+      - nginx  
+    networks:
+      locationnetwork:      
+  nginx:  
+    image: stoyanmkd/locationserver-nginx:1.0.0
+    container_name: nginx
+    volumes:
+      - /home/locationserver/nginx/htpasswd:/etc/nginx/htpasswd:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "8088:80"
+    restart: always
+    networks:
+      locationnetwork:
+
+networks:
+  locationnetwork:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.12.0.0/24
+
+volumes:
+  lvol:
